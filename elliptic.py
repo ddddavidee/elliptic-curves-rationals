@@ -1,5 +1,3 @@
-
-
 class EllipticCurve(object):
    def __init__(self, a, b):
       # assume we're already in the Weierstrass form
@@ -20,7 +18,7 @@ class EllipticCurve(object):
 
 
    def __str__(self):
-      return 'y^2 = x^3 + %Gx + %G' % (self.a, self.b)
+      return 'y^2 = x^3 + %sx + %s' % (self.a, self.b)
 
 
    def __repr__(self):
@@ -87,52 +85,42 @@ class Point(object):
    def __mul__(self, n):
       if not isinstance(n, int):
          raise Exception("Can't scale a point by something which isn't an int!")
-      else:
-            if n < 0:
-                return -self * -n
-            if n == 0:
-                return Ideal(self.curve)
-            else:
-                Q = self
-                R = self if n & 1 == 1 else Ideal(self.curve)
 
-                i = 2
-                while i <= n:
-                    Q = Q + Q
+      if n < 0:
+         return -self * -n
 
-                    if n & i == i:
-                        R = Q + R
+      if n == 0:
+         return Ideal(self.curve)
 
-                    i = i << 1
+      Q = self
+      R = self if n & 1 == 1 else Ideal(self.curve)
 
-                return R
+      i = 2
+      while i <= n:
+         Q += Q
+         if n & i == i:
+             R += Q
+         i = i << 1
+      return R
 
 
    def __rmul__(self, n):
       return self * n
 
+   def __list__(self):
+      return [self.x, self.y]
+
    def __eq__(self, other):
-      if isinstance(other, Ideal):
+      if type(other) is Ideal:
          return False
-      return self[0] == other[0] and self[1] == other[1]
+
+      return self.x, self.y == other.x, other.y
 
    def __ne__(self, other):
       return not self == other
 
    def __getitem__(self, index):
-      if index > 1 or index < -2: raise IndexError("Points have only two coordinates")
-      return self.x if index == 0 or index == -2 else self.y
-
-   # lexicographic ordering on points
-   def __lt__(self, other):
-      if isinstance(other, Ideal): return False
-      return self[0] < other[0] or (self[0] == other[0] and self[1] < other[1])
-   def __gt__(self, other):
-      return other.__lt__(self)
-   def __ge__(self, other):
-      return not self < other
-   def __le__(self, other):
-      return not other < self
+      return [self.x, self.y][index]
 
 
 class Ideal(Point):
@@ -142,7 +130,7 @@ class Ideal(Point):
    def __neg__(self):
       return self
 
-   def __repr__(self):
+   def __str__(self):
       return "Ideal"
 
    def __add__(self, Q):
@@ -157,9 +145,5 @@ class Ideal(Point):
          return self
 
    def __eq__(self, other):
-      return isinstance(other, Ideal)
-
-   def __lt__(self, other):
-      return True
-
+      return type(other) is Ideal
 
